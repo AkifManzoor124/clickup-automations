@@ -2,7 +2,6 @@
 
 1. An alternative to Motion for Clickup where tasks are scheduled/rescheduled based on avaliability,time estimate and priority
 
-// authenticate your clickup account <br> 
 // retrieve all the tasks which are already scheduled (first iteration) <br> 
 // retrieve all tasks which are overdue || empty(start date && due date) <br> 
 // retrieve all times where assignee is avaliable within calendar <br> 
@@ -24,4 +23,7 @@ features: shortest day <br>
 features: maximum tasks per day <br> 
 features: minimum/maximum number of pomodoro sessions <br> 
 features: associate tasks with pomodoros <br> 
+features: change the list based on the current sprint automatically <br>
+
+
 
