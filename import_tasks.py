@@ -4,7 +4,8 @@ list_id = "210793472"
 
 lists = {
     "210793472",
-    "216688395"
+    "216688395",
+    "57254735"
 }
 
 url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
@@ -41,6 +42,8 @@ print(data)
 
 timeframe = "2 weeks"
 schedule_by = "priority"
+
+
 
 def filter_tasks():
     return

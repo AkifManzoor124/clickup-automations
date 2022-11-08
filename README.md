@@ -27,3 +27,7 @@ features: change the list based on the current sprint automatically <br>
 
 
 
+I am trying to retrieve all tasks within the sprint folder, and schedule them to all avaliable times before the end of the sprint
+The last time will be sunday at 11:59pm
+depending on the priority and time estimate of the task, it will be scheduled to the earliest avaliable time
+I will have to consider the rituals list to find blocks of time which are already scheduled
