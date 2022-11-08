@@ -38,3 +38,19 @@ response = requests.get(url, headers=headers, params=query)
 
 data = response.json()
 print(data)
+
+timeframe = "2 weeks"
+schedule_by = "priority"
+
+def filter_tasks():
+    return
+
+def decipher_avaliability():
+    return
+
+#only retrieve tasks which have a time estimate
+def get_tasks():
+    return
+
+def schedule_tasks(timeframe, schedule_by):
+    return
