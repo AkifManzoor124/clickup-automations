@@ -15,6 +15,7 @@ Task optionally needs a priority <br>
 The tool aims to automatically schedule/reschedule tasks start/due date based on openings within assignee's calendar <br> 
 
 
+Zero Iteration: Scheduling without recurring tasks
 First Iteration: I can start with just scheduling tasks within a timeframe of 2 week <br> 
 Second Iteration: Custom timeframe <br> 
 Third Iteration: combinations of start date && due date <br> 
