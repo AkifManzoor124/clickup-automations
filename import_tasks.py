@@ -1,6 +1,6 @@
 import requests
 
-list_id = "210793472"
+team_id = "10542198"
 
 lists = {
     "210793472",
@@ -8,27 +8,27 @@ lists = {
     "57254735"
 }
 
-url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
+url = "https://api.clickup.com/api/v2/team/" + team_id + "/task"
 
 headers = {
-  "Content-Type": "application/json",
-  "Authorization": "pk_14759065_KDKZBH5ECUN3UZYYE00QY4MN7FLJ7GD1"
+    "Content-Type": "application/json",
+    "Authorization": "pk_14759065_KDKZBH5ECUN3UZYYE00QY4MN7FLJ7GD1"
 }
 
 query = {
-  "archived": "false",
-  "page": "0",
-  "reverse": "true",
-  "subtasks": "false",
-  "include_closed": "false",
-  "statuses": ['Open', 'In Progress', 'scheduled'],
+    "archived": "false",
+    "page": "0",
+    "reverse": "true",
+    "subtasks": "false",
+    "include_closed": "false",
+    "statuses": ['Open', 'In Progress', 'scheduled'],
+    "custom_fields": "[{\"field_id\":\"038dd945-e9c6-443d-92c7-169a15adaf7d\",\"operator\":\"IS NOT NULL\",\"value\":\"Yes\"}]",
 }
 
 # create a secret env file to store the api key
 
 timeframe = "2 weeks"
 schedule_by = "priority"
-
 
 
 def get_tasks():
