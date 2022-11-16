@@ -1,0 +1,13 @@
+version: '2' 
+
+services:
+  clickup_automation:
+    container_name: scheduler
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./:/app
