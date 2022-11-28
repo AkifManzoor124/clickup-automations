@@ -1,6 +1,6 @@
 import requests
 from copy import deepcopy
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 
 team_id = "10542198"
 
@@ -18,20 +18,20 @@ query = {
     "reverse": "true",
     "subtasks": "false",
     "include_closed": "false",
-    "statuses": ['Open', 'In Progress', 'scheduled'],
+    "statuses": ['Open', 'In Progress', 'scheduled', 'To Do'],
     "custom_fields": "[{\"field_id\":\"038dd945-e9c6-443d-92c7-169a15adaf7d\",\"operator\":\"IS NOT NULL\",\"value\":\"Yes\"}]",
 }
 
 settings={
     "start_of_day": '12:00:00',
     "end_of_day": '4:59:00',
-    'sprint_end_date': '2022-11-21 4:59:59'
+    'sprint_end_date': '2022-11-28 4:59:59'
 }
 
 api_params = {
     'headers' : {
         "Content-Type": "application/json",
-        "Authorization": "pk_14759065_5EHH6LBJQZ1N3CKTS6Z6W44FY8WZ7IS5"
+        "Authorization": "pk_14759065_XS9EIET89DXKVWM6P33RM3C7GP15N4MF"
     }
 }
 
@@ -98,6 +98,9 @@ def setup_recurring_tasks(task, occurence):
             duplicated_tasks.append(create_duplicate_task(next_day, task))
         elif(occurence == 'Weekdays'):
             if(next_day.weekday() < 5):
+                duplicated_tasks.append(create_duplicate_task(next_day, task))
+        elif(occurence == 'Workweek'):
+            if(next_day.weekday() < 6):
                 duplicated_tasks.append(create_duplicate_task(next_day, task))
         elif(next_day.strftime('%A') == occurence):
             if(i > 1):
@@ -224,9 +227,7 @@ def find_next_available_time_slot(scheduled_tasks, time_estimate):
                     'due_date': due_date
                 }
                 return available_time_slot
-            
-
-
+        
 
 
     #If there are no available time slots, then return None
@@ -239,7 +240,6 @@ def schedule_task(task_to_be_scheduled, start_date, end_date):
         "name": task_to_be_scheduled["name"],
         "description": task_to_be_scheduled["description"],
         "status": "open",
-        "priority": task_to_be_scheduled["priority"],
         "start_date": start_date,
         "start_date_time": True,
         "due_date": end_date,
@@ -269,8 +269,6 @@ def remove_duplicate_tasks(tasks):
                 print('Removing duplicate task ' + tasks[j]['name'])
                 del tasks[j]
 
-
-    
     return tasks
 
 
@@ -293,6 +291,10 @@ def remove_duplicate_tasks(tasks):
 # add feature to only allow tasks to be scheduled on certain times of the day and certain days of the week
 # Fix the bug where recurring tasks are being scheduled for the same time
 # Remove tasks that are scheduled after sprint end date
+# I want to block off certain times of the day and have my tasks re-scheduled around those times
+# Reschedule tasks that are already passed, and not completed
+# Add time estimate from your phone
+# Add a scheduled status to tasks that are scheduled
 
 
 print("\n\n\nScheduled Times\n")
@@ -315,11 +317,6 @@ tasks_to_schedule = get_tasks_to_schedule()
 
 for task_to_schedule in tasks_to_schedule:
     print(task_to_schedule["name"], task_to_schedule["time_estimate"]) 
-
-
-
-print("\n\n\n")
-print("\nBefore Sorting Replicated Times\n")
 
 for task in replicated_tasks:  
     #convert start_date to string
@@ -369,6 +366,6 @@ for task_to_schedule in tasks_to_schedule:
         for task in replicated_tasks:
             print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
 
-    #schedule_task(task_to_schedule, available_time_slot['start_date'], available_time_slot['due_date'])
+    schedule_task(task_to_schedule, available_time_slot['start_date'], available_time_slot['due_date'])
 
 
