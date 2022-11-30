@@ -23,9 +23,9 @@ query = {
 }
 
 settings={
-    "start_of_day": '12:00:00',
+    "start_of_day": '11:00:00',
     "end_of_day": '4:59:00',
-    'sprint_end_date': '2022-11-28 4:59:59'
+    'sprint_end_date': '2022-12-05 4:59:59'
 }
 
 api_params = {
@@ -78,11 +78,20 @@ def get_scheduled_tasks():
 def create_duplicate_task(next_day, task):
     task_copy = deepcopy(task)
 
-    start_time = datetime.utcfromtimestamp(int(task['start_date'])/1000).strftime('%H:%M:%S')
-    due_time = datetime.utcfromtimestamp(int(task['due_date'])/1000).strftime('%H:%M:%S')
+    #convert task_copy["start_date"] to datetime object
+    start_date = datetime.fromtimestamp(int(task_copy['start_date'])/1000)
+    due_date = datetime.fromtimestamp(int(task_copy['due_date'])/1000)
 
-    task_copy['start_date'] = int(datetime.strptime(next_day.strftime('%Y-%m-%d') + ' ' + start_time,'%Y-%m-%d %H:%M:%S').timestamp() * 1000)
-    task_copy['due_date'] = int(datetime.strptime(next_day.strftime('%Y-%m-%d') + ' ' + due_time,'%Y-%m-%d %H:%M:%S').timestamp() * 1000)
+    # set next_day day to start_date
+    start_date = start_date.replace(day=next_day.day, month=next_day.month, year=next_day.year)
+    due_date = due_date.replace(day=next_day.day, month=next_day.month, year=next_day.year)
+    
+    #convert datetime object back to timestamp
+    start_date = datetime.timestamp(start_date)*1000
+    due_date = datetime.timestamp(due_date)*1000
+
+    task_copy["start_date"] = int(start_date)
+    task_copy["due_date"] = int(due_date)
     
     return task_copy
 
@@ -90,7 +99,10 @@ def create_duplicate_task(next_day, task):
 def setup_recurring_tasks(task, occurence):
     duplicated_tasks = []
 
-    days_in_between = int(datetime.strptime(settings["sprint_end_date"],'%Y-%m-%d %H:%M:%S').strftime('%d')) - int(datetime.today().strftime('%d'))
+    days_in_between = int((datetime.strptime(settings["sprint_end_date"],'%Y-%m-%d %H:%M:%S') - datetime.today()).days)
+
+    # I know that there are days_in_between days between today and the end of the sprint
+    # I want to now find all occurences of the task that fit from current day to the end of the sprint
 
     for i in range(0, days_in_between):
         next_day = datetime.today() + timedelta(days=i)
@@ -103,8 +115,7 @@ def setup_recurring_tasks(task, occurence):
             if(next_day.weekday() < 6):
                 duplicated_tasks.append(create_duplicate_task(next_day, task))
         elif(next_day.strftime('%A') == occurence):
-            if(i > 1):
-                duplicated_tasks.append(create_duplicate_task(next_day, task))
+            duplicated_tasks.append(create_duplicate_task(next_day, task))
 
     return duplicated_tasks
 
@@ -181,8 +192,6 @@ def find_next_available_time_slot(scheduled_tasks, time_estimate):
     #convert the start_of_day and end_of_day to datetime objects with today's date
     start_of_day = datetime.strptime(datetime.today().strftime('%Y-%m-%d') + ' ' + settings['start_of_day'],'%Y-%m-%d %H:%M:%S')
     end_of_day = datetime.strptime(datetime.today().strftime('%Y-%m-%d') + ' ' + settings['end_of_day'],'%Y-%m-%d %H:%M:%S')
-    start_of_day = start_of_day + timedelta(days=-1)
-    end_of_day = end_of_day + timedelta(days=-1)
     
     
     for i in range(0, len(scheduled_tasks)-1):
@@ -202,32 +211,32 @@ def find_next_available_time_slot(scheduled_tasks, time_estimate):
             start_date = first_point
             due_date = first_point + time_estimate
 
-            print('Time is within range for the task ' + scheduled_tasks[i]['name'] + ' and ' + scheduled_tasks[i+1]['name'])
+            print('Time is within range for the task ' + scheduled_tasks[i]['name'] + ' and ' + scheduled_tasks[i+1]['name'] + ' with time estimate of ' + str(time_estimate))
         
 
-        if(start_date != None and due_date != None):
+            if(start_date != None and due_date != None):
 
-            #covert the start_date_time and due_date_time to datetime objects
-            start_date_time = datetime.fromtimestamp(start_date/1000)
-            due_date_time = datetime.fromtimestamp(due_date/1000)
+                #covert the start_date and due_date to datetime objects
+                start_date = datetime.fromtimestamp(int(start_date)/1000)
+                due_date = datetime.fromtimestamp(int(due_date)/1000)
 
-            #add day to end_of_day if start_of_day is greater than end_of_day
-            if(start_of_day > end_of_day):
-                end_of_day = end_of_day + timedelta(days=1)
+                #add day to end_of_day if start_of_day is greater than end_of_day
+                if(start_of_day > end_of_day):
+                    end_of_day = end_of_day + timedelta(days=1)
 
-            #if the task name is evening ritual, then add a day to start_of_day and end_of_day
-            if(scheduled_tasks[i]['name'] == 'Evening Ritual'):
-                start_of_day = start_of_day + timedelta(days=1)
-                end_of_day = end_of_day + timedelta(days=1)
+                #if the task name is evening ritual, then add a day to start_of_day and end_of_day
+                if(scheduled_tasks[i]['name'] == 'Evening Ritual'):
+                    start_of_day = start_of_day + timedelta(days=1)
+                    end_of_day = end_of_day + timedelta(days=1)
+                
+                #if the start_date is greater than the start_of_day and the due_date is less than the end_of_day, then the time estimate can be scheduled
+                if(start_date >= start_of_day and due_date <= end_of_day):
+                    available_time_slot = {
+                        'start_date': int(datetime.timestamp(start_date)) * 1000,
+                        'due_date': int(datetime.timestamp(due_date))*1000
+                    }
+                    return available_time_slot
             
-            #if the start_date_time is greater than the start_of_day and the due_date_time is less than the end_of_day, then the time estimate can be scheduled
-            if(start_date_time >= start_of_day and due_date_time <= end_of_day):
-                available_time_slot = {
-                    'start_date': start_date,
-                    'due_date': due_date
-                }
-                return available_time_slot
-        
 
 
     #If there are no available time slots, then return None
@@ -262,11 +271,15 @@ def schedule_task(task_to_be_scheduled, start_date, end_date):
 #remove duplicate tasks from the list
 def remove_duplicate_tasks(tasks):
     #remove duplicate tasks if they have the same name and start_date
-    for i in range(0, len(tasks)-1):
-        for j in range(i+1, len(tasks)-1):
+    
+    length = len(tasks)-1
+
+    for i in range(0, length):
+        for j in range(i+1, length):
             if(tasks[i]['name'] == tasks[j]['name'] and int(tasks[i]['start_date']) == int(tasks[j]['start_date'])):
                 
                 print('Removing duplicate task ' + tasks[j]['name'])
+                length = length - 1
                 del tasks[j]
 
     return tasks
@@ -304,6 +317,10 @@ scheduled_tasks, recurring_tasks = get_scheduled_tasks()
 for task in scheduled_tasks:
     print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
 
+print("\n\n\nRecurring Tasks\n")
+for task in recurring_tasks:
+   print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
+
 
 replicated_tasks = remove_duplicate_tasks(replicate_recurring_tasks(recurring_tasks))
 
@@ -312,6 +329,7 @@ print("\n\n\nRecurring Times Removing Duplicates\n")
 for task in replicated_tasks:
    print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
 
+print("\n\n\n")
 
 tasks_to_schedule = get_tasks_to_schedule()
 
@@ -348,11 +366,27 @@ replicated_tasks.sort(key=lambda x: x["start_date"])
 for task in replicated_tasks:  
     print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
 
+#remove all the tasks within replicated_tasks which have a start_date less than current date
+replicated_tasks = [task for task in replicated_tasks if int(task["start_date"]) > int(datetime.now().timestamp()*1000)]
+
+print("\n\n\n")
+print("\nAfter Removing tasks before current datetime\n")
+
+for task in replicated_tasks:  
+    print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
+
+
+i=0
 for task_to_schedule in tasks_to_schedule:
+
+    i = i + 1
+
+    if(i == 4):
+        break
+
     available_time_slot = find_next_available_time_slot(replicated_tasks, task_to_schedule["time_estimate"])
 
     if available_time_slot is not None:
-        print("\nScheduling task: ", task_to_schedule["name"], " at ", datetime.utcfromtimestamp(int(available_time_slot['start_date'])/1000).strftime('%Y-%m-%d %H:%M:%S'), " to ", datetime.utcfromtimestamp(int(available_time_slot['due_date'])/1000).strftime('%Y-%m-%d %H:%M:%S'))
 
         task_to_schedule["start_date"] = str(available_time_slot['start_date'])
         task_to_schedule["due_date"] = str(available_time_slot['due_date'])
@@ -361,11 +395,27 @@ for task_to_schedule in tasks_to_schedule:
         
         replicated_tasks.sort(key=lambda x: x['start_date'])
 
-        print('\n\n\n')
+        print("\n\n\n")
+       
+        print('Scheduling the task: ', task_to_schedule['name'])
 
         for task in replicated_tasks:
-            print(task["name"], datetime.utcfromtimestamp(int(task["start_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'), datetime.utcfromtimestamp(int(task["due_date"])/1000).strftime('%Y-%m-%d %H:%M:%S'))
+            start_date = int(task['start_date'])/1000
+            due_date = int(task['due_date'])/1000
+            print(task['name'], datetime.fromtimestamp(int(start_date)) , datetime.fromtimestamp( int(due_date)  ))
 
-    schedule_task(task_to_schedule, available_time_slot['start_date'], available_time_slot['due_date'])
+            start_counter = False
+            counter = 0
+
+            if(task_to_schedule['name'] == task['name']):
+                start_counter = True
+            
+            if(start_counter == True):
+                counter = counter + 1
+
+            if(counter == 4):
+                break
+
+    #schedule_task(task_to_schedule, available_time_slot['start_date'], available_time_slot['due_date'])
 
 
